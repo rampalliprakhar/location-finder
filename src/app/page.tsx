@@ -115,10 +115,25 @@ export default function Home() {
       </div>
 
       {!session ? (
-        <div className="max-w-md mx-auto mt-10">
+        <div className="max-w-md mx-auto mt-10 dark:bg-gray-800 p-6 rounded-lg">
           <AuthComponent
             supabaseClient={supabase}
-            appearance={{ theme: ThemeSupa }}
+            appearance={{ 
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: '#3B82F6',
+                    brandAccent: '#2563EB',
+                    inputBackground: 'rgb(31 41 55)',
+                    inputText: 'white',
+                    inputBorder: 'rgb(75 85 99)',
+                    inputLabelText: 'rgb(156 163 175)',
+                    inputPlaceholder: 'rgb(107 114 128)'
+                  }
+                }
+              }
+            }}
             providers={['google', 'github']}
           />
         </div>
