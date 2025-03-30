@@ -10,6 +10,13 @@ import { Location } from '@/types';
 import { fetchLocations } from '@/lib/osmClient';
 import { transformOsmData } from '@/utils/osmTransform';
 
+interface GeolocationPosition {
+  coords: {
+    latitude: number;
+    longitude: number;
+  }
+}
+
 const MapComponent = dynamic(() => import("@/components/Map"), { 
   ssr: false 
 });
@@ -48,20 +55,40 @@ export default function Home() {
     const fetchOsmData = async () => {
       try {
         setLoading(true);
-        // Get user's location
-        navigator.geolocation.getCurrentPosition(async (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          // Create a bounding box around user's location
-          const bbox = `${lat - 0.02},${lon - 0.02},${lat + 0.02},${lon + 0.02}`;
-          const osmData = await fetchLocations(bbox);
-          const transformedLocations = transformOsmData(osmData);
-          setLocations(transformedLocations);
-          setLoading(false);
+        const defaultLocation: GeolocationPosition = {
+          coords: {
+            latitude: 40.7128,
+            longitude: -74.0060
+          }
+        };
+  
+        const getPosition = (): Promise<GeolocationPosition> => new Promise((resolve) => {
+          navigator.permissions.query({ name: 'geolocation' }).then(result => {
+            if (result.state === 'denied') {
+              toast.error('Please enable location access in your browser settings to see nearby locations', {
+                duration: 5000,
+              });
+              resolve(defaultLocation);
+            } else {
+              navigator.geolocation.getCurrentPosition(
+                (position) => resolve(position),
+                () => resolve(defaultLocation)
+              );
+            }
+          });
         });
+  
+        const position = await getPosition();
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const bbox = `${lat - 0.02},${lon - 0.02},${lat + 0.02},${lon + 0.02}`;
+        const osmData = await fetchLocations(bbox);
+        const transformedLocations = transformOsmData(osmData);
+        setLocations(transformedLocations);
       } catch (error) {
         console.error('Error:', error);
-        toast.error('Failed to load locations');
+        toast.error('Using default location');
+      } finally {
         setLoading(false);
       }
     };
