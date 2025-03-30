@@ -83,18 +83,16 @@ export default function Map({ locations }: { locations: Location[] }) {
             icon={getMarkerIcon(location.category)}
           >
             <Popup>
-              <div className="p-2">
+              <div className="p-2 dark:bg-gray-800 dark:text-white">
                 <h3 className="font-bold">{location.name}</h3>
-                <p>{location.category}</p>
+                <p className="text-sm dark:text-gray-300">{location.category}</p>
+                <button 
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mt-2 transition-colors"
+                  onClick={(e) => handleFavorite(location)}
+                >
+                  ⭐ Save
+                </button>
               </div>
-              <button 
-                onClick={() => {
-                  handleFavorite(location);
-                }}
-                className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
-              >
-                ⭐ Save
-              </button>
             </Popup>
           </Marker>
         ))}

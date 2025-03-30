@@ -74,7 +74,7 @@ export default function Home() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">📍 Location Finder</h1>
         <select 
-          className="border rounded px-3 py-2"
+          className="border rounded px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
           onChange={(e) => setSelectedCategory(e.target.value)}
           value={selectedCategory}
         >
