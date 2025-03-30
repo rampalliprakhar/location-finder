@@ -1,19 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, LayerGroup } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon, LatLng } from 'leaflet';
-import L from 'leaflet';
 import 'leaflet-defaulticon-compatibility';
-import 'leaflet.markercluster';
-// import { MarkerClusterGroup } from 'react-leaflet-markercluster';
-// import 'react-leaflet-markercluster/dist/styles.min.css';
 import { Location } from '@/types';
-import { SearchBox } from './SearchBox';
-
-interface MapProps {
-  locations: Location[];
-  onSelectLocation: React.Dispatch<React.SetStateAction<Location | null>>;
-}
+import { supabase } from '@/lib/supabaseClient';
+import { toast } from 'react-hot-toast';
 
 const LocationMarker = () => {
   const [position, setPosition] = useState<LatLng | null>(null);
@@ -31,22 +23,49 @@ const LocationMarker = () => {
   ) : null;
 };
 
-export default function Map({ locations, onSelectLocation }: MapProps) {
-  console.log("Locations in Map:", locations);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+export default function Map({ locations }: { locations: Location[] }) {
+  const visibleLocations = locations.slice(0, 1000);
 
   const getMarkerIcon = (category: string) => {
     return new Icon({
-      iconUrl: `/markers/${category.toLowerCase()}-marker.png`,
+      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
       iconSize: [25, 41],
-      iconAnchor: [12, 41]
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
     });
+  };
+
+  const handleFavorite = async (location: Location) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error('Please sign in to save favorites');
+      return;
+    }
+  
+    const { data, error } = await supabase
+      .from('favorites')
+      .insert({ 
+        location_id: location.id,
+        name: location.name,
+        category: location.category,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        user_id: user.id 
+      });
+  
+    if (error) {
+      toast.error('Failed to save favorite');
+      console.error(error);
+    } else {
+      toast.success('Added to favorites!');
+    }
   };
 
   return (
     <div className="relative h-full">
-      <SearchBox locations={locations} onSelect={setSelectedLocation} />
-      
       <MapContainer
         center={[40.7128, -74.0060]}
         zoom={13}
@@ -57,33 +76,28 @@ export default function Map({ locations, onSelectLocation }: MapProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
         <LocationMarker />
-        
-        <LayerGroup>
-          {locations.map((location) => (
-            <Marker
-              key={location.id}
-              position={[location.latitude, location.longitude]}
-              icon={getMarkerIcon(location.category)}
-            >
-              <Popup>
-                <div className="p-2">
-                  <h3 className="font-bold text-lg">{location.name}</h3>
-                  <p>Category: {location.category}</p>
-                  <p>Rating: {location.rating}⭐</p>
-                  <p>Capacity: {location.current_capacity}/{location.total_capacity}</p>
-                  <p>Price Range: {'$'.repeat(location.price_range)}</p>
-                  <p>Hours: {location.operating_hours}</p>
-                  <button 
-                    className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-                    onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`)}
-                  >
-                    Navigate Here
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </LayerGroup>
+        {visibleLocations.map((location) => (
+          <Marker
+            key={location.id}
+            position={[location.latitude, location.longitude]}
+            icon={getMarkerIcon(location.category)}
+          >
+            <Popup>
+              <div className="p-2">
+                <h3 className="font-bold">{location.name}</h3>
+                <p>{location.category}</p>
+              </div>
+              <button 
+                onClick={() => {
+                  handleFavorite(location);
+                }}
+                className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
+              >
+                ⭐ Save
+              </button>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );
