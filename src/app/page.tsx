@@ -31,7 +31,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
-  const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
   const filteredLocations = locations.filter(location => 
     selectedCategory === 'all' || location.category === selectedCategory
